@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://customizasistemas.com.br/sitemap.xml
