@@ -108,10 +108,25 @@ rodapé e na página de contato.
 
 ## Formulário de contato
 
-O formulário em `/contato` ainda não está conectado a um backend. O envio é
-simulado em [`src/lib/contactApi.ts`](src/lib/contactApi.ts), que já está
-preparado para ser substituído por uma chamada real a uma API, e-mail,
-CRM ou WhatsApp — basta editar a função `submitContactRequest`.
+O formulário em `/contato` envia os dados para `POST /api/contato`
+([`api/contato.ts`](api/contato.ts)), uma Vercel Edge Function que encaminha
+a solicitação por e-mail usando a [Resend](https://resend.com).
+
+Para funcionar em produção, configure estas variáveis de ambiente no painel
+da Vercel (**Settings → Environment Variables**):
+
+| Variável | Obrigatória | Descrição |
+| --- | --- | --- |
+| `RESEND_API_KEY` | Sim | Chave de API criada em resend.com (Dashboard → API Keys). |
+| `CONTACT_TO_EMAIL` | Não | E-mail que recebe as solicitações. Padrão: `customizasistemas@gmail.com`. |
+| `CONTACT_FROM_EMAIL` | Não | Remetente do e-mail. Padrão: `onboarding@resend.dev` (funciona sem verificar domínio, mas só entrega para o e-mail da conta Resend). Para entregar de forma confiável em produção, verifique o domínio `customizasistemas.com.br` na Resend e use algo como `Customiza Sistemas <contato@customizasistemas.com.br>`. |
+
+Depois de configurar as variáveis, faça um novo deploy (push no `main` ou
+"Redeploy" no painel da Vercel) para elas passarem a valer.
+
+Sem `RESEND_API_KEY` configurada, o endpoint responde com erro 500 e o
+formulário mostra a mensagem de falha no envio — ele não volta a ficar
+"simulado" silenciosamente.
 
 ## SEO
 
