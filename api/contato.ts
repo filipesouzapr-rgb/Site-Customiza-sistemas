@@ -70,7 +70,7 @@ export default async function handler(request: Request): Promise<Response> {
     return json({ ok: false, error: "Configuração do servidor incompleta." }, 500);
   }
 
-  const fromAddress = process.env.CONTACT_FROM_EMAIL || "Customiza Sistemas <onboarding@resend.dev>";
+  const fromAddress = process.env.CONTACT_FROM_EMAIL || "Customiza Sistemas <contato@customizasistemas.com.br>";
   const toAddress = process.env.CONTACT_TO_EMAIL || "customizasistemas@gmail.com";
 
   const html = `
