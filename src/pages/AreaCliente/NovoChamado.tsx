@@ -7,7 +7,13 @@ import { useAuth } from "../../hooks/useAuth";
 const inputClasses =
   "w-full rounded-xl border border-navy-900/12 bg-white px-4 py-3 text-sm text-navy-900 placeholder:text-navy-900/35 transition-colors focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/30";
 
-const tipoOptions = ["Erro", "Melhoria", "Personalização"];
+// O valor precisa bater com a check constraint chamados_tipo_check no banco
+// (aceita só minúsculo, sem acento) — o rótulo é só para exibição.
+const tipoOptions = [
+  { value: "erro", label: "Erro" },
+  { value: "melhoria", label: "Melhoria" },
+  { value: "personalizacao", label: "Personalização" },
+];
 
 const ALLOWED_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "txt", "csv", "xlsx", "pdf"];
 
@@ -101,6 +107,7 @@ export function NovoChamado() {
       .single();
 
     if (chamadoError || !chamado) {
+      console.error("Erro ao criar chamado:", chamadoError);
       setStatus("error");
       setSubmitError("Não foi possível abrir o chamado. Tente novamente.");
       return;
@@ -113,6 +120,7 @@ export function NovoChamado() {
         .upload(path, file, { upsert: true });
 
       if (uploadError) {
+        console.error("Erro ao enviar anexo:", uploadError);
         setAttachmentWarning("O chamado foi criado, mas não foi possível anexar o arquivo.");
       } else {
         const { error: anexoError } = await supabase.from("anexos_chamado").insert({
@@ -123,6 +131,7 @@ export function NovoChamado() {
         });
 
         if (anexoError) {
+          console.error("Erro ao registrar anexo:", anexoError);
           setAttachmentWarning("O chamado foi criado, mas não foi possível registrar o anexo.");
         }
       }
@@ -207,8 +216,8 @@ export function NovoChamado() {
               Selecione uma opção
             </option>
             {tipoOptions.map((tipo) => (
-              <option key={tipo} value={tipo}>
-                {tipo}
+              <option key={tipo.value} value={tipo.value}>
+                {tipo.label}
               </option>
             ))}
           </select>

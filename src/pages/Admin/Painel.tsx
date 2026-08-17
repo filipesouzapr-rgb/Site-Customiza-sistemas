@@ -3,6 +3,7 @@ import { AlertCircle, CheckCircle2, Loader2, Lock, UserPlus } from "lucide-react
 import { useAuth } from "../../hooks/useAuth";
 import { AppHeader } from "../../components/AppHeader";
 import { criarCliente, listarChamados, atualizarStatus, type ChamadoAdmin } from "../../lib/adminApi";
+import { tipoLabel } from "../../lib/tipoChamado";
 
 const inputClasses =
   "w-full rounded-xl border border-navy-900/12 bg-white px-4 py-3 text-sm text-navy-900 placeholder:text-navy-900/35 transition-colors focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/30";
@@ -304,7 +305,7 @@ export function Painel() {
                         </p>
                         <h3 className="mt-1 text-base font-semibold text-navy-900">{chamado.titulo}</h3>
                         <p className="mt-1 text-xs uppercase tracking-wide text-navy-900/40">
-                          {chamado.tipo}
+                          {tipoLabel(chamado.tipo)}
                         </p>
                       </div>
 

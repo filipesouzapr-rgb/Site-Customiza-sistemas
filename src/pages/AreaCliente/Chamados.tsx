@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AlertCircle, Inbox, Loader2, Plus } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
+import { tipoLabel } from "../../lib/tipoChamado";
 
 interface Chamado {
   id: string;
@@ -103,7 +104,7 @@ export function Chamados() {
                   <div>
                     <h2 className="text-base font-semibold text-navy-900">{chamado.titulo}</h2>
                     <p className="mt-1 text-xs uppercase tracking-wide text-navy-900/40">
-                      {chamado.tipo}
+                      {tipoLabel(chamado.tipo)}
                     </p>
                   </div>
                   <span

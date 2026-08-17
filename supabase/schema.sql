@@ -44,6 +44,14 @@ create table if not exists public.chamados (
   created_at timestamptz default now()
 );
 
+-- Descoberta por tentativa e erro em 2026-08-18 (não aparece em
+-- information_schema.table_constraints, só em pg_constraint) — o front-end
+-- (NovoChamado.tsx) precisa enviar exatamente um destes 3 valores em
+-- `tipo`, senão a inserção falha com 23514/check_violation.
+alter table public.chamados
+  add constraint chamados_tipo_check
+  check (tipo in ('erro', 'melhoria', 'personalizacao'));
+
 alter table public.chamados enable row level security;
 
 -- Cliente só vê e cria os próprios chamados. Não há política de
