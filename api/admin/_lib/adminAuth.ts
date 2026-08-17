@@ -42,7 +42,16 @@ export async function requireAdmin(
     return { ok: false, response: json({ ok: false, error: "Não autenticado." }, 401) };
   }
 
-  const supabase = getServiceClient();
+  let supabase: SupabaseClient;
+  try {
+    supabase = getServiceClient();
+  } catch (error) {
+    console.error("Falha ao inicializar o cliente Supabase (service role):", error);
+    return {
+      ok: false,
+      response: json({ ok: false, error: "Configuração do servidor incompleta." }, 500),
+    };
+  }
 
   const { data: userData, error: userError } = await supabase.auth.getUser(token);
   if (userError || !userData.user) {
