@@ -14,7 +14,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 // Mesmos status que o front-end sabe estilizar (ver statusStyles em
 // src/pages/AreaCliente/Chamados.tsx).
-const VALID_STATUSES = ["aberto", "em_andamento", "resolvido", "fechado"];
+const VALID_STATUSES = ["aberto", "andamento", "resolvido"];
 
 function isValidPayload(body: unknown): body is AtualizarStatusPayload {
   if (!body || typeof body !== "object") return false;

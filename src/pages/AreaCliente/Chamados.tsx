@@ -14,9 +14,8 @@ interface Chamado {
 
 const statusStyles: Record<string, string> = {
   aberto: "bg-blue-50 text-blue-700",
-  em_andamento: "bg-amber-50 text-amber-700",
+  andamento: "bg-amber-50 text-amber-700",
   resolvido: "bg-emerald-50 text-emerald-700",
-  fechado: "bg-navy-900/8 text-navy-900/60",
 };
 
 function statusLabel(status: string): string {
