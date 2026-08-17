@@ -4,21 +4,10 @@ import { useAuth } from "../../hooks/useAuth";
 import { AppHeader } from "../../components/AppHeader";
 import { criarCliente, listarChamados, atualizarStatus, type ChamadoAdmin } from "../../lib/adminApi";
 import { tipoLabel } from "../../lib/tipoChamado";
+import { statusOptions, statusStyles } from "../../lib/statusChamado";
 
 const inputClasses =
   "w-full rounded-xl border border-navy-900/12 bg-white px-4 py-3 text-sm text-navy-900 placeholder:text-navy-900/35 transition-colors focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/30";
-
-const statusOptions = [
-  { value: "aberto", label: "Aberto" },
-  { value: "andamento", label: "Andamento" },
-  { value: "resolvido", label: "Resolvido" },
-];
-
-const statusStyles: Record<string, string> = {
-  aberto: "bg-blue-50 text-blue-700",
-  andamento: "bg-amber-50 text-amber-700",
-  resolvido: "bg-emerald-50 text-emerald-700",
-};
 
 interface ClienteFormState {
   nome: string;

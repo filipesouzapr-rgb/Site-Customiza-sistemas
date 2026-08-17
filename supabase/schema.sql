@@ -106,6 +106,56 @@ create policy "Cliente cria os próprios anexos"
   );
 
 -- =========================================================================
+-- comentarios_chamado
+-- =========================================================================
+-- Já existia no banco, mas não estava documentada aqui — estrutura e
+-- políticas descobertas em 2026-08-18 via introspecção (OpenAPI da
+-- PostgREST) e testes de insert/select como cliente autenticado.
+create table if not exists public.comentarios_chamado (
+  id uuid primary key default gen_random_uuid(),
+  chamado_id uuid not null references public.chamados (id),
+  autor_tipo text not null,
+  mensagem text not null,
+  created_at timestamptz default now()
+);
+
+alter table public.comentarios_chamado enable row level security;
+
+-- autor_tipo só aceita 'cliente' ou 'admin' (confirmado por tentativa).
+alter table public.comentarios_chamado
+  add constraint comentarios_chamado_autor_tipo_check
+  check (autor_tipo in ('cliente', 'admin'));
+
+-- Cliente vê os comentários dos próprios chamados (mesmo padrão de
+-- anexos_chamado).
+create policy "Cliente vê os comentários dos próprios chamados"
+  on public.comentarios_chamado
+  for select
+  to public
+  using (
+    chamado_id in (
+      select id from public.chamados where cliente_id = auth.uid()
+    )
+  );
+
+-- Cliente só consegue inserir comentário nos próprios chamados E só com
+-- autor_tipo = 'cliente' — não dá para se passar por admin pela RLS
+-- (confirmado: autor_tipo diferente de 'cliente' é rejeitado com 42501,
+-- não com a check constraint). Postagem como 'admin' precisa vir de um
+-- papel com mais privilégio (ex: futura function serverless com
+-- service_role, mesmo padrão de api/admin/*).
+create policy "Cliente comenta os próprios chamados"
+  on public.comentarios_chamado
+  for insert
+  to public
+  with check (
+    autor_tipo = 'cliente'
+    and chamado_id in (
+      select id from public.chamados where cliente_id = auth.uid()
+    )
+  );
+
+-- =========================================================================
 -- admins
 -- =========================================================================
 -- Ao contrário das tabelas acima, esta ainda precisa ser criada — rode este

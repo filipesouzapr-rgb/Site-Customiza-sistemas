@@ -4,6 +4,7 @@ import { AlertCircle, Inbox, Loader2, Plus } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
 import { tipoLabel } from "../../lib/tipoChamado";
+import { statusStyles, statusLabel } from "../../lib/statusChamado";
 
 interface Chamado {
   id: string;
@@ -12,16 +13,6 @@ interface Chamado {
   tipo: string;
   status: string;
   created_at: string;
-}
-
-const statusStyles: Record<string, string> = {
-  aberto: "bg-blue-50 text-blue-700",
-  andamento: "bg-amber-50 text-amber-700",
-  resolvido: "bg-emerald-50 text-emerald-700",
-};
-
-function statusLabel(status: string): string {
-  return status.replace(/_/g, " ");
 }
 
 export function Chamados() {
@@ -96,29 +87,31 @@ export function Chamados() {
         {!error && chamados && chamados.length > 0 && (
           <ul className="flex flex-col gap-4">
             {chamados.map((chamado) => (
-              <li
-                key={chamado.id}
-                className="rounded-2xl border border-navy-900/8 bg-white p-6 shadow-sm shadow-navy-900/5"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-base font-semibold text-navy-900">{chamado.titulo}</h2>
-                    <p className="mt-1 text-xs uppercase tracking-wide text-navy-900/40">
-                      {tipoLabel(chamado.tipo)}
-                    </p>
+              <li key={chamado.id}>
+                <Link
+                  to={`/area-do-cliente/chamados/${chamado.id}`}
+                  className="block rounded-2xl border border-navy-900/8 bg-white p-6 shadow-sm shadow-navy-900/5 transition-all hover:-translate-y-0.5 hover:border-blue-600/20 hover:shadow-md"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-base font-semibold text-navy-900">{chamado.titulo}</h2>
+                      <p className="mt-1 text-xs uppercase tracking-wide text-navy-900/40">
+                        {tipoLabel(chamado.tipo)}
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+                        statusStyles[chamado.status] ?? "bg-navy-900/8 text-navy-900/60"
+                      }`}
+                    >
+                      {statusLabel(chamado.status)}
+                    </span>
                   </div>
-                  <span
-                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold capitalize ${
-                      statusStyles[chamado.status] ?? "bg-navy-900/8 text-navy-900/60"
-                    }`}
-                  >
-                    {statusLabel(chamado.status)}
-                  </span>
-                </div>
-                <p className="mt-3 text-sm leading-relaxed text-navy-900/60">{chamado.descricao}</p>
-                <p className="mt-4 text-xs text-navy-900/40">
-                  Aberto em {new Date(chamado.created_at).toLocaleDateString("pt-BR")}
-                </p>
+                  <p className="mt-3 text-sm leading-relaxed text-navy-900/60">{chamado.descricao}</p>
+                  <p className="mt-4 text-xs text-navy-900/40">
+                    Aberto em {new Date(chamado.created_at).toLocaleDateString("pt-BR")}
+                  </p>
+                </Link>
               </li>
             ))}
           </ul>
