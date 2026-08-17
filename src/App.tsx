@@ -9,9 +9,9 @@ import { Solucoes } from "./pages/Solucoes";
 import { Sobre } from "./pages/Sobre";
 import { Contato } from "./pages/Contato";
 
-// Carregados sob demanda: só quem acessa /area-do-cliente baixa o cliente
-// Supabase e o código relacionado, mantendo o bundle das páginas públicas
-// enxuto.
+// Carregados sob demanda: só quem acessa /area-do-cliente ou /admin baixa o
+// cliente Supabase e o código relacionado, mantendo o bundle das páginas
+// públicas enxuto.
 const AreaClienteRoot = lazy(() =>
   import("./pages/AreaCliente/AreaClienteRoot").then((m) => ({ default: m.AreaClienteRoot })),
 );
@@ -23,8 +23,9 @@ const AreaClienteLayout = lazy(() =>
   import("./pages/AreaCliente/AreaClienteLayout").then((m) => ({ default: m.AreaClienteLayout })),
 );
 const Chamados = lazy(() => import("./pages/AreaCliente/Chamados").then((m) => ({ default: m.Chamados })));
+const Painel = lazy(() => import("./pages/Admin/Painel").then((m) => ({ default: m.Painel })));
 
-function AreaClienteFallback() {
+function AuthAreaFallback() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-navy-950">
       <Loader2 size={28} className="animate-spin text-cyan-accent" aria-hidden="true" />
@@ -46,18 +47,18 @@ function App() {
         </Route>
 
         <Route
-          path="/area-do-cliente"
           element={
-            <Suspense fallback={<AreaClienteFallback />}>
+            <Suspense fallback={<AuthAreaFallback />}>
               <AreaClienteRoot />
             </Suspense>
           }
         >
-          <Route path="login" element={<Login />} />
+          <Route path="/area-do-cliente/login" element={<Login />} />
           <Route element={<ProtectedRoute />}>
-            <Route element={<AreaClienteLayout />}>
+            <Route path="/area-do-cliente" element={<AreaClienteLayout />}>
               <Route path="chamados" element={<Chamados />} />
             </Route>
+            <Route path="/admin" element={<Painel />} />
           </Route>
         </Route>
       </Routes>

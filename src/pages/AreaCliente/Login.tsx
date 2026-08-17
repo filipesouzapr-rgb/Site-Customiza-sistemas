@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { LogIn, Loader2 } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
@@ -11,14 +11,19 @@ const inputClasses =
 
 export function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { session, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Volta para a página que exigiu login (ex: /admin) quando houver uma;
+  // senão cai no destino padrão da área do cliente.
+  const from = (location.state as { from?: string } | null)?.from || "/area-do-cliente/chamados";
+
   if (!isLoading && session) {
-    return <Navigate to="/area-do-cliente/chamados" replace />;
+    return <Navigate to={from} replace />;
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -34,7 +39,7 @@ export function Login() {
       return;
     }
 
-    navigate("/area-do-cliente/chamados");
+    navigate(from);
   }
 
   return (
