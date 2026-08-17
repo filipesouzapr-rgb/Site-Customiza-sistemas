@@ -1,10 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { AlertCircle, CheckCircle2, Loader2, Lock, UserPlus } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { AppHeader } from "../../components/AppHeader";
+import { StatusSelect } from "../../components/StatusSelect";
 import { criarCliente, listarChamados, atualizarStatus, type ChamadoAdmin } from "../../lib/adminApi";
 import { tipoLabel } from "../../lib/tipoChamado";
-import { statusOptions, statusStyles } from "../../lib/statusChamado";
 
 const inputClasses =
   "w-full rounded-xl border border-navy-900/12 bg-white px-4 py-3 text-sm text-navy-900 placeholder:text-navy-900/35 transition-colors focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/30";
@@ -285,44 +286,40 @@ export function Painel() {
                 {chamados.map((chamado) => (
                   <li
                     key={chamado.id}
-                    className="rounded-2xl border border-navy-900/8 bg-white p-6 shadow-sm shadow-navy-900/5"
+                    className="rounded-2xl border border-navy-900/8 bg-white shadow-sm shadow-navy-900/5"
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div>
+                    <div className="flex flex-wrap items-start justify-between gap-4 p-6">
+                      <Link
+                        to={`/admin/chamados/${chamado.id}`}
+                        className="group min-w-0 flex-1"
+                      >
                         <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
                           {chamado.cliente_nome ?? "Cliente desconhecido"}
                         </p>
-                        <h3 className="mt-1 text-base font-semibold text-navy-900">{chamado.titulo}</h3>
+                        <h3 className="mt-1 text-base font-semibold text-navy-900 transition-colors group-hover:text-blue-600">
+                          {chamado.titulo}
+                        </h3>
                         <p className="mt-1 text-xs uppercase tracking-wide text-navy-900/40">
                           {tipoLabel(chamado.tipo)}
                         </p>
-                      </div>
+                        <p className="mt-3 text-sm leading-relaxed text-navy-900/60">
+                          {chamado.descricao}
+                        </p>
+                      </Link>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex shrink-0 items-center gap-2">
                         {updatingId === chamado.id && (
                           <Loader2 size={14} className="animate-spin text-navy-900/40" aria-hidden="true" />
                         )}
-                        <label className="sr-only" htmlFor={`status-${chamado.id}`}>
-                          Status do chamado {chamado.titulo}
-                        </label>
-                        <select
+                        <StatusSelect
                           id={`status-${chamado.id}`}
+                          label={`Status do chamado ${chamado.titulo}`}
                           value={chamado.status}
                           disabled={updatingId === chamado.id}
-                          onChange={(e) => handleStatusChange(chamado.id, e.target.value)}
-                          className={`rounded-full border-0 px-3 py-1.5 text-xs font-semibold capitalize transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600/30 disabled:opacity-50 ${
-                            statusStyles[chamado.status] ?? "bg-navy-900/8 text-navy-900/60"
-                          }`}
-                        >
-                          {statusOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(value) => handleStatusChange(chamado.id, value)}
+                        />
                       </div>
                     </div>
-                    <p className="mt-3 text-sm leading-relaxed text-navy-900/60">{chamado.descricao}</p>
                   </li>
                 ))}
               </ul>

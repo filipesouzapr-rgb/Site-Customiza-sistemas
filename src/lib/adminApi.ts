@@ -69,3 +69,35 @@ export async function atualizarStatus(
   const data = await response.json();
   return { ok: response.ok, status: response.status, data };
 }
+
+export interface ComentarioAdmin {
+  id: string;
+  chamado_id: string;
+  autor_tipo: string;
+  mensagem: string;
+  created_at: string;
+}
+
+export async function listarComentarios(
+  chamadoId: string,
+): Promise<ApiResult<{ comentarios: ComentarioAdmin[] }>> {
+  const response = await fetch(
+    `/api/admin/listar-comentarios?chamado_id=${encodeURIComponent(chamadoId)}`,
+    { headers: await authHeaders() },
+  );
+  const data = await response.json();
+  return { ok: response.ok, status: response.status, data };
+}
+
+export async function responderChamado(
+  chamadoId: string,
+  mensagem: string,
+): Promise<ApiResult<{ comentario?: ComentarioAdmin }>> {
+  const response = await fetch("/api/admin/responder-chamado", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+    body: JSON.stringify({ chamado_id: chamadoId, mensagem }),
+  });
+  const data = await response.json();
+  return { ok: response.ok, status: response.status, data };
+}

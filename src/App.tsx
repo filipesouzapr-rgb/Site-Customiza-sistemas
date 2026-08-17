@@ -30,6 +30,9 @@ const ChamadoDetalhe = lazy(() =>
   import("./pages/AreaCliente/ChamadoDetalhe").then((m) => ({ default: m.ChamadoDetalhe })),
 );
 const Painel = lazy(() => import("./pages/Admin/Painel").then((m) => ({ default: m.Painel })));
+const AdminChamadoDetalhe = lazy(() =>
+  import("./pages/Admin/ChamadoDetalhe").then((m) => ({ default: m.ChamadoDetalhe })),
+);
 
 function AuthAreaFallback() {
   return (
@@ -67,6 +70,7 @@ function App() {
               <Route path="chamados/:id" element={<ChamadoDetalhe />} />
             </Route>
             <Route path="/admin" element={<Painel />} />
+            <Route path="/admin/chamados/:id" element={<AdminChamadoDetalhe />} />
           </Route>
         </Route>
       </Routes>
