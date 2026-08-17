@@ -21,11 +21,39 @@ npm install
 
 ## Como executar em desenvolvimento
 
+Para trabalhar só no front-end (páginas, componentes, estilo):
+
 ```bash
 npm run dev
 ```
 
 O site ficará disponível em `http://localhost:5173`.
+
+**Esse comando não executa as funções serverless em `api/`** — o Vite não
+sabe rodá-las, então uma chamada a `/api/contato` ou `/api/admin/*` volta o
+código-fonte do arquivo em vez de uma resposta JSON. Para testar qualquer
+coisa que dependa de `api/` (formulário de contato, login de admin, painel
+administrativo), use a Vercel CLI, que emula a plataforma da Vercel
+localmente:
+
+```bash
+npm run dev:full
+```
+
+Configuração única, na primeira vez (roda os comandos abaixo com a Vercel
+CLI já instalada como devDependency, via `npx`):
+
+```bash
+npx vercel login          # abre o navegador para autenticar
+npx vercel link           # conecta esta pasta ao projeto já existente na Vercel
+npx vercel env pull .env.local   # baixa as variáveis de ambiente já configuradas no painel
+```
+
+`vercel env pull` sobrescreve o `.env.local` com o que estiver configurado
+no painel da Vercel (ambiente "Development") — garanta que
+`SUPABASE_SECRET_KEY`, `RESEND_API_KEY` etc. já estejam lá antes de rodar.
+Depois desse setup único, `npm run dev:full` sobe front-end e `api/` juntos
+(geralmente em `http://localhost:3000`).
 
 ## Como gerar o build de produção
 

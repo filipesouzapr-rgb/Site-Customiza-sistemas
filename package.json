@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:full": "vercel dev",
     "build": "tsc -b && vite build && node scripts/generate-static-seo.mjs",
     "lint": "oxlint",
     "preview": "vite preview"
@@ -25,6 +26,7 @@
     "oxlint": "^1.75.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
+    "vercel": "^59.1.3",
     "vite": "^8.2.0"
   }
 }
