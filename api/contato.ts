@@ -3,6 +3,8 @@
 // (Request/Response/fetch), sem depender de pacotes da Vercel.
 export const config = { runtime: "edge" };
 
+import { json } from "./_lib/http";
+
 interface ContactPayload {
   name: string;
   company: string;
@@ -39,13 +41,6 @@ function escapeHtml(value: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-}
-
-function json(body: unknown, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
 }
 
 export default async function handler(request: Request): Promise<Response> {

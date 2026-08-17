@@ -128,6 +128,33 @@ Sem `RESEND_API_KEY` configurada, o endpoint responde com erro 500 e o
 formulário mostra a mensagem de falha no envio — ele não volta a ficar
 "simulado" silenciosamente.
 
+## API administrativa (`api/admin/`)
+
+Três Vercel Edge Functions de uso restrito a administradores:
+
+| Endpoint | Método | Faz o quê |
+| --- | --- | --- |
+| `/api/admin/criar-cliente` | `POST` | Recebe `{ nome, email, empresa?, senha }`, cria o usuário no Supabase Auth e o registro correspondente em `clientes`. |
+| `/api/admin/listar-chamados` | `GET` | Retorna todos os chamados de todos os clientes, com o nome do cliente já embutido (`cliente_nome`). |
+| `/api/admin/atualizar-status` | `POST` | Recebe `{ chamado_id, status }` e atualiza o chamado. `status` precisa ser um de: `aberto`, `em_andamento`, `resolvido`, `fechado`. |
+
+Todos os três exigem o header `Authorization: Bearer <access_token>` com o
+token de sessão do usuário logado (o mesmo `session.access_token` que o
+Supabase Auth retorna no client). O handler valida esse token contra o
+Supabase e confere se o usuário está cadastrado na tabela `admins`
+([`supabase/schema.sql`](supabase/schema.sql)) — quem não estiver recebe
+`403`.
+
+A verificação e as operações em si usam a **Secret key** do Supabase (nunca
+a chave `anon`/publishable), configurada via variável de ambiente na Vercel:
+
+| Variável | Obrigatória | Descrição |
+| --- | --- | --- |
+| `SUPABASE_SECRET_KEY` | Sim | Chave secreta do projeto (Supabase → Settings → API Keys → "secret key"). **Nunca** coloque essa chave em uma variável `VITE_*` — isso a exporia no bundle do site. Adicione só nas Environment Variables da Vercel. |
+
+`VITE_SUPABASE_URL` (já usada pelo client) é reaproveitada nesses endpoints
+— não é sensível, então não precisa duplicar em outra variável.
+
 ## SEO
 
 Cada página define seu próprio título e meta description a partir de uma
