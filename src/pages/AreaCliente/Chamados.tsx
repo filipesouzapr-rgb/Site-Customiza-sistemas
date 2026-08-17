@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { AlertCircle, Inbox, Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { AlertCircle, Inbox, Loader2, Plus } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -53,10 +54,21 @@ export function Chamados() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
-      <h1 className="text-2xl font-bold tracking-tight text-navy-900">Meus chamados</h1>
-      <p className="mt-1 text-sm text-navy-900/60">
-        Acompanhe as solicitações abertas com a Customiza Sistemas.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-navy-900">Meus chamados</h1>
+          <p className="mt-1 text-sm text-navy-900/60">
+            Acompanhe as solicitações abertas com a Customiza Sistemas.
+          </p>
+        </div>
+        <Link
+          to="/area-do-cliente/chamados/novo"
+          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-500"
+        >
+          <Plus size={16} aria-hidden="true" />
+          Novo chamado
+        </Link>
+      </div>
 
       <div className="mt-8">
         {error && (

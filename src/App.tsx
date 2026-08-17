@@ -23,6 +23,9 @@ const AreaClienteLayout = lazy(() =>
   import("./pages/AreaCliente/AreaClienteLayout").then((m) => ({ default: m.AreaClienteLayout })),
 );
 const Chamados = lazy(() => import("./pages/AreaCliente/Chamados").then((m) => ({ default: m.Chamados })));
+const NovoChamado = lazy(() =>
+  import("./pages/AreaCliente/NovoChamado").then((m) => ({ default: m.NovoChamado })),
+);
 const Painel = lazy(() => import("./pages/Admin/Painel").then((m) => ({ default: m.Painel })));
 
 function AuthAreaFallback() {
@@ -57,6 +60,7 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/area-do-cliente" element={<AreaClienteLayout />}>
               <Route path="chamados" element={<Chamados />} />
+              <Route path="chamados/novo" element={<NovoChamado />} />
             </Route>
             <Route path="/admin" element={<Painel />} />
           </Route>

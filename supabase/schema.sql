@@ -115,3 +115,36 @@ create table if not exists public.admins (
 );
 
 alter table public.admins enable row level security;
+
+-- =========================================================================
+-- Storage: bucket anexos-chamados
+-- =========================================================================
+-- Também ainda precisa ser criado — rode no SQL Editor. Bucket privado
+-- (public = false): os arquivos não têm URL pública, só ficam acessíveis
+-- via URL assinada (supabase.storage.from(...).createSignedUrl(...)) para
+-- quem passar nas políticas abaixo.
+--
+-- Caminho de cada arquivo: {cliente_id}/{nome-do-arquivo} — as políticas
+-- usam storage.foldername(name)[1] (primeiro segmento do caminho) para
+-- conferir se bate com o uuid do usuário autenticado.
+insert into storage.buckets (id, name, public)
+values ('anexos-chamados', 'anexos-chamados', false)
+on conflict (id) do nothing;
+
+create policy "Cliente faz upload dos próprios anexos"
+  on storage.objects
+  for insert
+  to public
+  with check (
+    bucket_id = 'anexos-chamados'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "Cliente vê os próprios anexos no storage"
+  on storage.objects
+  for select
+  to public
+  using (
+    bucket_id = 'anexos-chamados'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
