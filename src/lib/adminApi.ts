@@ -101,3 +101,19 @@ export async function responderChamado(
   const data = await response.json();
   return { ok: response.ok, status: response.status, data };
 }
+
+export interface AnexoAdmin {
+  id: string;
+  nome_arquivo: string;
+  tamanho: number | null;
+  signedUrl: string | null;
+}
+
+export async function listarAnexos(chamadoId: string): Promise<ApiResult<{ anexos: AnexoAdmin[] }>> {
+  const response = await fetch(
+    `/api/admin/listar-anexos?chamado_id=${encodeURIComponent(chamadoId)}`,
+    { headers: await authHeaders() },
+  );
+  const data = await response.json();
+  return { ok: response.ok, status: response.status, data };
+}

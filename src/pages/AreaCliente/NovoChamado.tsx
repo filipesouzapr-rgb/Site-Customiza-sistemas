@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, Paperclip, Send, X } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
+import { formatFileSize } from "../../lib/formatFileSize";
 
 const inputClasses =
   "w-full rounded-xl border border-navy-900/12 bg-white px-4 py-3 text-sm text-navy-900 placeholder:text-navy-900/35 transition-colors focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/30";
@@ -21,12 +22,6 @@ function isAllowedFile(file: File): boolean {
   if (file.type.startsWith("image/")) return true;
   const extension = file.name.split(".").pop()?.toLowerCase();
   return !!extension && ALLOWED_EXTENSIONS.includes(extension);
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 interface FormState {

@@ -1,10 +1,14 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
-import { AlertCircle, ArrowLeft, Loader2, MessageSquare, Send } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, MessageSquare, Paperclip, Send } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../hooks/useAuth";
 import { tipoLabel } from "../../lib/tipoChamado";
 import { statusStyles, statusLabel } from "../../lib/statusChamado";
+import { AnexosList, type Anexo } from "../../components/AnexosList";
+
+const ANEXOS_BUCKET = "anexos-chamados";
+const SIGNED_URL_EXPIRES_IN = 60 * 60; // 1 hora
 
 interface Chamado {
   id: string;
@@ -38,6 +42,7 @@ export function ChamadoDetalhe() {
 
   const [chamado, setChamado] = useState<Chamado | null | undefined>(undefined);
   const [comentarios, setComentarios] = useState<Comentario[] | null>(null);
+  const [anexos, setAnexos] = useState<Anexo[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [mensagem, setMensagem] = useState("");
@@ -51,7 +56,7 @@ export function ChamadoDetalhe() {
     let isMounted = true;
 
     async function load() {
-      const [chamadoResult, comentariosResult] = await Promise.all([
+      const [chamadoResult, comentariosResult, anexosResult] = await Promise.all([
         supabase
           .from("chamados")
           .select("id, titulo, descricao, tipo, status, created_at")
@@ -61,6 +66,11 @@ export function ChamadoDetalhe() {
         supabase
           .from("comentarios_chamado")
           .select("id, autor_tipo, mensagem, created_at")
+          .eq("chamado_id", id)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("anexos_chamado")
+          .select("id, nome_arquivo, url, tamanho")
           .eq("chamado_id", id)
           .order("created_at", { ascending: true }),
       ]);
@@ -80,6 +90,30 @@ export function ChamadoDetalhe() {
         return;
       }
       setComentarios(comentariosResult.data ?? []);
+
+      if (anexosResult.error) {
+        console.error("Erro ao carregar anexos:", anexosResult.error);
+      } else if (anexosResult.data && anexosResult.data.length > 0) {
+        const paths = anexosResult.data.map((anexo) => anexo.url);
+        const { data: signedUrls, error: signError } = await supabase.storage
+          .from(ANEXOS_BUCKET)
+          .createSignedUrls(paths, SIGNED_URL_EXPIRES_IN);
+
+        if (!isMounted) return;
+
+        if (signError) {
+          console.error("Erro ao gerar links dos anexos:", signError);
+        } else {
+          setAnexos(
+            anexosResult.data.map((anexo, index) => ({
+              id: anexo.id,
+              nome_arquivo: anexo.nome_arquivo,
+              tamanho: anexo.tamanho,
+              signedUrl: signedUrls?.[index]?.signedUrl ?? null,
+            })),
+          );
+        }
+      }
     }
 
     load();
@@ -185,6 +219,18 @@ export function ChamadoDetalhe() {
           Aberto em {formatDateTime(chamado.created_at)}
         </p>
       </div>
+
+      {anexos.length > 0 && (
+        <div className="mt-8">
+          <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-navy-900/50">
+            <Paperclip size={16} aria-hidden="true" />
+            Anexos
+          </h2>
+          <div className="mt-4">
+            <AnexosList anexos={anexos} />
+          </div>
+        </div>
+      )}
 
       <div className="mt-8">
         <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-navy-900/50">

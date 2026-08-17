@@ -1,16 +1,19 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
-import { AlertCircle, ArrowLeft, Loader2, Lock, MessageSquare, Send } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, Lock, MessageSquare, Paperclip, Send } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { AppHeader } from "../../components/AppHeader";
 import { StatusSelect } from "../../components/StatusSelect";
+import { AnexosList } from "../../components/AnexosList";
 import {
   listarChamados,
   listarComentarios,
+  listarAnexos,
   atualizarStatus,
   responderChamado,
   type ChamadoAdmin,
   type ComentarioAdmin,
+  type AnexoAdmin,
 } from "../../lib/adminApi";
 import { tipoLabel } from "../../lib/tipoChamado";
 
@@ -33,6 +36,7 @@ export function ChamadoDetalhe() {
   const [pageState, setPageState] = useState<PageState>("loading");
   const [chamado, setChamado] = useState<ChamadoAdmin | null>(null);
   const [comentarios, setComentarios] = useState<ComentarioAdmin[]>([]);
+  const [anexos, setAnexos] = useState<AnexoAdmin[]>([]);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
 
@@ -46,12 +50,17 @@ export function ChamadoDetalhe() {
     async function load() {
       setPageState("loading");
 
-      const [chamadosResult, comentariosResult] = await Promise.all([
+      const [chamadosResult, comentariosResult, anexosResult] = await Promise.all([
         listarChamados(),
         listarComentarios(id as string),
+        listarAnexos(id as string),
       ]);
 
-      if (chamadosResult.status === 403 || comentariosResult.status === 403) {
+      if (
+        chamadosResult.status === 403 ||
+        comentariosResult.status === 403 ||
+        anexosResult.status === 403
+      ) {
         setPageState("denied");
         return;
       }
@@ -69,6 +78,11 @@ export function ChamadoDetalhe() {
 
       setChamado(encontrado);
       setComentarios(comentariosResult.data.comentarios ?? []);
+      if (anexosResult.ok) {
+        setAnexos(anexosResult.data.anexos ?? []);
+      } else {
+        console.error("Erro ao carregar anexos:", anexosResult.data.error);
+      }
       setPageState("ready");
     }
 
@@ -202,6 +216,18 @@ export function ChamadoDetalhe() {
                   Aberto em {formatDateTime(chamado.created_at)}
                 </p>
               </div>
+
+              {anexos.length > 0 && (
+                <div className="mt-8">
+                  <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-navy-900/50">
+                    <Paperclip size={16} aria-hidden="true" />
+                    Anexos
+                  </h2>
+                  <div className="mt-4">
+                    <AnexosList anexos={anexos} />
+                  </div>
+                </div>
+              )}
 
               <div className="mt-8">
                 <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-navy-900/50">
