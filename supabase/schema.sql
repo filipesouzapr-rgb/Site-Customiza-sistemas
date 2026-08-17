@@ -96,3 +96,22 @@ create policy "Cliente cria os próprios anexos"
       select id from public.chamados where cliente_id = auth.uid()
     )
   );
+
+-- =========================================================================
+-- admins
+-- =========================================================================
+-- Ao contrário das tabelas acima, esta ainda precisa ser criada — rode este
+-- bloco no SQL Editor do Supabase antes de considerar o schema.sql
+-- atualizado com a realidade do banco.
+--
+-- Lista de permissão de administradores: user_id é o mesmo uuid de
+-- auth.users(id). RLS habilitada e SEM NENHUMA política — isso nega acesso
+-- por padrão a `anon` e `authenticated`; só o papel service_role (que tem
+-- BYPASSRLS no Supabase) consegue ler ou escrever aqui. Não use a chave
+-- anon/publishable para consultar esta tabela pelo app: ela sempre virá
+-- vazia.
+create table if not exists public.admins (
+  user_id uuid primary key references auth.users (id)
+);
+
+alter table public.admins enable row level security;
