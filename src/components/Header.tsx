@@ -11,6 +11,7 @@ const navLinks = [
   { label: "Soluções", to: "/solucoes" },
   { label: "Sobre nós", to: "/sobre" },
   { label: "Contato", to: "/contato" },
+  { label: "Área do Cliente", to: "/area-do-cliente/login" },
 ];
 
 export function Header() {
