@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, Paperclip, Send, X } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
@@ -28,9 +28,15 @@ interface FormState {
   titulo: string;
   descricao: string;
   tipo: string;
+  sistemaId: string;
 }
 
-const initialForm: FormState = { titulo: "", descricao: "", tipo: "" };
+const initialForm: FormState = { titulo: "", descricao: "", tipo: "", sistemaId: "" };
+
+interface SistemaOption {
+  id: string;
+  nome: string;
+}
 
 type Status = "idle" | "submitting" | "success" | "error";
 
@@ -44,6 +50,38 @@ export function NovoChamado() {
   const [status, setStatus] = useState<Status>("idle");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [attachmentWarning, setAttachmentWarning] = useState<string | null>(null);
+
+  const [sistemas, setSistemas] = useState<SistemaOption[]>([]);
+  const [sistemasError, setSistemasError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!session) return;
+
+    let isMounted = true;
+
+    supabase
+      .from("cliente_sistemas")
+      .select("sistema_id, sistemas(id, nome)")
+      .eq("cliente_id", session.user.id)
+      .returns<{ sistema_id: string; sistemas: SistemaOption | null }[]>()
+      .then(({ data, error }) => {
+        if (!isMounted) return;
+        if (error) {
+          console.error("Erro ao carregar sistemas do cliente:", error);
+          setSistemasError("Não foi possível carregar seus sistemas.");
+          return;
+        }
+        const options = (data ?? [])
+          .map((row) => row.sistemas)
+          .filter((sistema): sistema is SistemaOption => sistema !== null)
+          .sort((a, b) => a.nome.localeCompare(b.nome));
+        setSistemas(options);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [session]);
 
   function updateField<K extends keyof FormState>(field: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -76,6 +114,7 @@ export function NovoChamado() {
       newErrors.descricao = "Descreva com um pouco mais de detalhes (mínimo 10 caracteres).";
     }
     if (!form.tipo) newErrors.tipo = "Selecione o tipo do chamado.";
+    if (!form.sistemaId) newErrors.sistemaId = "Selecione o sistema.";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -97,6 +136,7 @@ export function NovoChamado() {
         titulo: form.titulo.trim(),
         descricao: form.descricao.trim(),
         tipo: form.tipo,
+        sistema_id: form.sistemaId,
       })
       .select("id")
       .single();
@@ -217,6 +257,30 @@ export function NovoChamado() {
             ))}
           </select>
           {errors.tipo && <p className="text-xs text-red-500">{errors.tipo}</p>}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="sistema" className="text-sm font-medium text-navy-900">
+            Sistema <span className="text-red-500">*</span>
+          </label>
+          <select
+            id="sistema"
+            value={form.sistemaId}
+            onChange={(e) => updateField("sistemaId", e.target.value)}
+            disabled={sistemas.length === 0}
+            className={inputClasses}
+          >
+            <option value="" disabled>
+              {sistemas.length === 0 ? "Nenhum sistema vinculado" : "Selecione uma opção"}
+            </option>
+            {sistemas.map((sistema) => (
+              <option key={sistema.id} value={sistema.id}>
+                {sistema.nome}
+              </option>
+            ))}
+          </select>
+          {errors.sistemaId && <p className="text-xs text-red-500">{errors.sistemaId}</p>}
+          {sistemasError && <p className="text-xs text-red-500">{sistemasError}</p>}
         </div>
 
         <div className="flex flex-col gap-1.5">

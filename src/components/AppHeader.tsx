@@ -6,9 +6,11 @@ import logo from "../assets/logo-header.png";
 interface AppHeaderProps {
   homeTo: string;
   userEmail?: string;
+  clienteNome?: string;
+  clienteEmpresa?: string;
 }
 
-export function AppHeader({ homeTo, userEmail }: AppHeaderProps) {
+export function AppHeader({ homeTo, userEmail, clienteNome, clienteEmpresa }: AppHeaderProps) {
   async function handleLogout() {
     await supabase.auth.signOut();
   }
@@ -20,8 +22,18 @@ export function AppHeader({ homeTo, userEmail }: AppHeaderProps) {
           <img src={logo} alt="Customiza Sistemas" className="h-8 w-auto" />
         </Link>
         <div className="flex items-center gap-4">
-          {userEmail && (
-            <span className="hidden text-sm text-navy-900/60 sm:inline">{userEmail}</span>
+          {clienteNome ? (
+            <div className="hidden flex-col items-end sm:flex">
+              <span className="text-sm font-medium text-navy-900">
+                {clienteNome}
+                {clienteEmpresa ? ` · ${clienteEmpresa}` : ""}
+              </span>
+              {userEmail && <span className="text-xs text-navy-900/40">{userEmail}</span>}
+            </div>
+          ) : (
+            userEmail && (
+              <span className="hidden text-sm text-navy-900/60 sm:inline">{userEmail}</span>
+            )
           )}
           <button
             type="button"
