@@ -17,6 +17,8 @@ interface Chamado {
   tipo: string;
   status: string;
   created_at: string;
+  sistema_id: string | null;
+  sistemas: { nome: string } | null;
 }
 
 interface Comentario {
@@ -59,10 +61,11 @@ export function ChamadoDetalhe() {
       const [chamadoResult, comentariosResult, anexosResult] = await Promise.all([
         supabase
           .from("chamados")
-          .select("id, titulo, descricao, tipo, status, created_at")
+          .select("id, titulo, descricao, tipo, status, created_at, sistema_id, sistemas(nome)")
           .eq("id", id)
           .eq("cliente_id", clienteId)
-          .maybeSingle(),
+          .maybeSingle()
+          .returns<Chamado | null>(),
         supabase
           .from("comentarios_chamado")
           .select("id, autor_tipo, mensagem, created_at")
@@ -202,8 +205,14 @@ export function ChamadoDetalhe() {
             <h1 className="text-xl font-bold tracking-tight text-navy-900 sm:text-2xl">
               {chamado.titulo}
             </h1>
-            <p className="mt-1 text-xs uppercase tracking-wide text-navy-900/40">
-              {tipoLabel(chamado.tipo)}
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs uppercase tracking-wide text-navy-900/40">
+              <span>{tipoLabel(chamado.tipo)}</span>
+              {chamado.sistemas?.nome && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span className="normal-case text-navy-900/50">{chamado.sistemas.nome}</span>
+                </>
+              )}
             </p>
           </div>
           <span
