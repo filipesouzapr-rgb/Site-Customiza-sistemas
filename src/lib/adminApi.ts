@@ -5,6 +5,7 @@ export interface CriarClientePayload {
   email: string;
   empresa?: string;
   senha: string;
+  sistemas?: string[];
 }
 
 export interface ChamadoAdmin {
@@ -114,6 +115,32 @@ export async function listarAnexos(chamadoId: string): Promise<ApiResult<{ anexo
     `/api/admin/listar-anexos?chamado_id=${encodeURIComponent(chamadoId)}`,
     { headers: await authHeaders() },
   );
+  const data = await response.json();
+  return { ok: response.ok, status: response.status, data };
+}
+
+export interface Sistema {
+  id: string;
+  nome: string;
+  created_at: string;
+}
+
+// A tabela `sistemas` tem leitura aberta a usuários autenticados via RLS,
+// então a listagem consulta o Supabase diretamente — sem endpoint próprio.
+export async function listarSistemas(): Promise<{ data: Sistema[]; error: string | null }> {
+  const { data, error } = await supabase.from("sistemas").select("id, nome, created_at").order("nome");
+  if (error) {
+    return { data: [], error: error.message };
+  }
+  return { data: data ?? [], error: null };
+}
+
+export async function criarSistema(nome: string): Promise<ApiResult<{ sistema?: Sistema }>> {
+  const response = await fetch("/api/admin/criar-sistema", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+    body: JSON.stringify({ nome }),
+  });
   const data = await response.json();
   return { ok: response.ok, status: response.status, data };
 }

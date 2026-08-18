@@ -1,10 +1,18 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, CheckCircle2, Loader2, Lock, UserPlus } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Lock, Monitor, UserPlus } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { AppHeader } from "../../components/AppHeader";
 import { StatusSelect } from "../../components/StatusSelect";
-import { criarCliente, listarChamados, atualizarStatus, type ChamadoAdmin } from "../../lib/adminApi";
+import {
+  criarCliente,
+  listarChamados,
+  atualizarStatus,
+  listarSistemas,
+  criarSistema,
+  type ChamadoAdmin,
+  type Sistema,
+} from "../../lib/adminApi";
 import { tipoLabel } from "../../lib/tipoChamado";
 
 const inputClasses =
@@ -15,9 +23,16 @@ interface ClienteFormState {
   email: string;
   empresa: string;
   senha: string;
+  sistemas: string[];
 }
 
-const initialClienteForm: ClienteFormState = { nome: "", email: "", empresa: "", senha: "" };
+const initialClienteForm: ClienteFormState = {
+  nome: "",
+  email: "",
+  empresa: "",
+  senha: "",
+  sistemas: [],
+};
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type PanelState = "loading" | "denied" | "error" | "ready";
@@ -37,9 +52,60 @@ export function Painel() {
     null,
   );
 
+  const [sistemas, setSistemas] = useState<Sistema[]>([]);
+  const [sistemasError, setSistemasError] = useState<string | null>(null);
+  const [novoSistemaNome, setNovoSistemaNome] = useState("");
+  const [isCreatingSistema, setIsCreatingSistema] = useState(false);
+  const [sistemaMessage, setSistemaMessage] = useState<{ type: "success" | "error"; text: string } | null>(
+    null,
+  );
+
   useEffect(() => {
     loadChamados();
+    loadSistemas();
   }, []);
+
+  async function loadSistemas() {
+    const { data, error } = await listarSistemas();
+    if (error) {
+      setSistemasError("Não foi possível carregar os sistemas.");
+      return;
+    }
+    setSistemasError(null);
+    setSistemas(data);
+  }
+
+  async function handleCreateSistema(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSistemaMessage(null);
+
+    const nome = novoSistemaNome.trim();
+    if (!nome) return;
+
+    setIsCreatingSistema(true);
+    const result = await criarSistema(nome);
+    setIsCreatingSistema(false);
+
+    if (!result.ok || !result.data.sistema) {
+      setSistemaMessage({ type: "error", text: result.data.error || "Não foi possível cadastrar o sistema." });
+      return;
+    }
+
+    setSistemas((prev) =>
+      [...prev, result.data.sistema as Sistema].sort((a, b) => a.nome.localeCompare(b.nome)),
+    );
+    setSistemaMessage({ type: "success", text: `Sistema "${nome}" cadastrado com sucesso.` });
+    setNovoSistemaNome("");
+  }
+
+  function toggleClienteSistema(sistemaId: string) {
+    setClienteForm((prev) => ({
+      ...prev,
+      sistemas: prev.sistemas.includes(sistemaId)
+        ? prev.sistemas.filter((id) => id !== sistemaId)
+        : [...prev.sistemas, sistemaId],
+    }));
+  }
 
   async function loadChamados() {
     setPanelState("loading");
@@ -91,6 +157,7 @@ export function Painel() {
       email: clienteForm.email,
       empresa: clienteForm.empresa || undefined,
       senha: clienteForm.senha,
+      sistemas: clienteForm.sistemas.length > 0 ? clienteForm.sistemas : undefined,
     });
     setIsCreatingCliente(false);
 
@@ -224,6 +291,30 @@ export function Painel() {
                 </div>
               </div>
 
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-navy-900">Sistemas contratados</span>
+                {sistemas.length === 0 ? (
+                  <p className="text-xs text-navy-900/40">Nenhum sistema cadastrado ainda.</p>
+                ) : (
+                  <div className="flex flex-col gap-2 rounded-xl border border-navy-900/12 bg-white p-4 sm:grid sm:grid-cols-2">
+                    {sistemas.map((sistema) => (
+                      <label
+                        key={sistema.id}
+                        className="flex items-center gap-2 text-sm text-navy-900"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={clienteForm.sistemas.includes(sistema.id)}
+                          onChange={() => toggleClienteSistema(sistema.id)}
+                          className="h-4 w-4 rounded border-navy-900/20 text-blue-600 focus:ring-blue-600/30"
+                        />
+                        {sistema.nome}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {clienteMessage && (
                 <p
                   role="status"
@@ -259,7 +350,84 @@ export function Painel() {
             </form>
           </section>
 
-          {/* Áreas 2 e 3 — lista de chamados com seletor de status */}
+          {/* Área 2 — cadastro e listagem de sistemas */}
+          <section className="mt-8 rounded-2xl border border-navy-900/8 bg-white p-6 sm:p-8">
+            <div className="flex items-center gap-2">
+              <Monitor size={20} className="text-blue-600" aria-hidden="true" />
+              <h2 className="text-lg font-semibold text-navy-900">Sistemas</h2>
+            </div>
+
+            <form onSubmit={handleCreateSistema} className="mt-6 flex flex-wrap items-end gap-3">
+              <div className="flex min-w-[220px] flex-1 flex-col gap-1.5">
+                <label htmlFor="sistema-nome" className="text-sm font-medium text-navy-900">
+                  Novo sistema
+                </label>
+                <input
+                  id="sistema-nome"
+                  type="text"
+                  placeholder="Nome do sistema"
+                  value={novoSistemaNome}
+                  onChange={(e) => setNovoSistemaNome(e.target.value)}
+                  className={inputClasses}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={isCreatingSistema || !novoSistemaNome.trim()}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-500 disabled:pointer-events-none disabled:opacity-70"
+              >
+                {isCreatingSistema ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                    Cadastrando...
+                  </>
+                ) : (
+                  "Cadastrar sistema"
+                )}
+              </button>
+            </form>
+
+            {sistemaMessage && (
+              <p
+                role="status"
+                className={`mt-4 flex items-center gap-2 rounded-lg px-4 py-3 text-sm ${
+                  sistemaMessage.type === "success"
+                    ? "bg-emerald-50 text-emerald-700"
+                    : "bg-red-50 text-red-600"
+                }`}
+              >
+                {sistemaMessage.type === "success" ? (
+                  <CheckCircle2 size={16} aria-hidden="true" />
+                ) : (
+                  <AlertCircle size={16} aria-hidden="true" />
+                )}
+                {sistemaMessage.text}
+              </p>
+            )}
+
+            {sistemasError && (
+              <p className="mt-4 flex items-center gap-2 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+                <AlertCircle size={16} aria-hidden="true" />
+                {sistemasError}
+              </p>
+            )}
+
+            <ul className="mt-6 flex flex-wrap gap-2">
+              {sistemas.length === 0 && !sistemasError && (
+                <p className="text-sm text-navy-900/50">Nenhum sistema cadastrado ainda.</p>
+              )}
+              {sistemas.map((sistema) => (
+                <li
+                  key={sistema.id}
+                  className="rounded-full bg-navy-900/5 px-4 py-1.5 text-sm text-navy-900/80"
+                >
+                  {sistema.nome}
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* Áreas 3 e 4 — lista de chamados com seletor de status */}
           <section className="mt-8">
             <h2 className="text-lg font-semibold text-navy-900">Todos os chamados</h2>
 

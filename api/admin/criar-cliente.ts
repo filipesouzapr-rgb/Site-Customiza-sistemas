@@ -10,9 +10,11 @@ interface CriarClientePayload {
   email: string;
   empresa?: string;
   senha: string;
+  sistemas?: string[];
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function isValidPayload(body: unknown): body is CriarClientePayload {
   if (!body || typeof body !== "object") return false;
@@ -24,7 +26,9 @@ function isValidPayload(body: unknown): body is CriarClientePayload {
     EMAIL_REGEX.test(b.email) &&
     typeof b.senha === "string" &&
     b.senha.length >= 6 &&
-    (b.empresa === undefined || typeof b.empresa === "string")
+    (b.empresa === undefined || typeof b.empresa === "string") &&
+    (b.sistemas === undefined ||
+      (Array.isArray(b.sistemas) && b.sistemas.every((s) => typeof s === "string" && UUID_REGEX.test(s))))
   );
 }
 
@@ -73,6 +77,21 @@ export default async function handler(request: Request): Promise<Response> {
     await supabase.auth.admin.deleteUser(created.user.id);
     console.error("Falha ao inserir cliente:", insertError);
     return json({ ok: false, error: "Não foi possível cadastrar o cliente." }, 500);
+  }
+
+  const sistemaIds = [...new Set(body.sistemas ?? [])];
+  if (sistemaIds.length > 0) {
+    const { error: sistemasError } = await supabase
+      .from("cliente_sistemas")
+      .insert(sistemaIds.map((sistemaId) => ({ cliente_id: created.user!.id, sistema_id: sistemaId })));
+
+    if (sistemasError) {
+      // Mantém o mesmo invariante de não deixar registros órfãos/inconsistentes.
+      await supabase.from("clientes").delete().eq("id", created.user.id);
+      await supabase.auth.admin.deleteUser(created.user.id);
+      console.error("Falha ao vincular sistemas ao cliente:", sistemasError);
+      return json({ ok: false, error: "Não foi possível vincular os sistemas ao cliente." }, 500);
+    }
   }
 
   return json(
