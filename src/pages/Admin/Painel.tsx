@@ -463,12 +463,19 @@ export function Painel() {
                       >
                         <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
                           {chamado.cliente_nome ?? "Cliente desconhecido"}
+                          {chamado.cliente_empresa ? ` · ${chamado.cliente_empresa}` : ""}
                         </p>
                         <h3 className="mt-1 text-base font-semibold text-navy-900 transition-colors group-hover:text-blue-600">
                           {chamado.titulo}
                         </h3>
-                        <p className="mt-1 text-xs uppercase tracking-wide text-navy-900/40">
-                          {tipoLabel(chamado.tipo)}
+                        <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs uppercase tracking-wide text-navy-900/40">
+                          <span>{tipoLabel(chamado.tipo)}</span>
+                          {chamado.sistema_nome && (
+                            <>
+                              <span aria-hidden="true">·</span>
+                              <span className="normal-case text-navy-900/50">{chamado.sistema_nome}</span>
+                            </>
+                          )}
                         </p>
                         <p className="mt-3 text-sm leading-relaxed text-navy-900/60">
                           {chamado.descricao}

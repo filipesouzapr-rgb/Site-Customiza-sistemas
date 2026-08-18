@@ -13,7 +13,9 @@ interface ChamadoRow {
   status: string;
   created_at: string;
   cliente_id: string;
-  clientes: { nome: string } | null;
+  sistema_id: string | null;
+  clientes: { nome: string; empresa: string | null } | null;
+  sistemas: { nome: string } | null;
 }
 
 export default async function handler(request: Request): Promise<Response> {
@@ -26,7 +28,9 @@ export default async function handler(request: Request): Promise<Response> {
 
   const { data, error } = await admin.supabase
     .from("chamados")
-    .select("id, titulo, descricao, tipo, status, created_at, cliente_id, clientes(nome)")
+    .select(
+      "id, titulo, descricao, tipo, status, created_at, cliente_id, sistema_id, clientes(nome, empresa), sistemas(nome)",
+    )
     .order("created_at", { ascending: false })
     .returns<ChamadoRow[]>();
 
@@ -44,6 +48,8 @@ export default async function handler(request: Request): Promise<Response> {
     created_at: chamado.created_at,
     cliente_id: chamado.cliente_id,
     cliente_nome: chamado.clientes?.nome ?? null,
+    cliente_empresa: chamado.clientes?.empresa ?? null,
+    sistema_nome: chamado.sistemas?.nome ?? null,
   }));
 
   return json({ ok: true, chamados }, 200);

@@ -17,6 +17,8 @@ export interface ChamadoAdmin {
   created_at: string;
   cliente_id: string;
   cliente_nome: string | null;
+  cliente_empresa: string | null;
+  sistema_nome: string | null;
 }
 
 interface ApiResult<T> {

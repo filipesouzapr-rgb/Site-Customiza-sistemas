@@ -181,12 +181,19 @@ export function ChamadoDetalhe() {
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
                       {chamado.cliente_nome ?? "Cliente desconhecido"}
+                      {chamado.cliente_empresa ? ` · ${chamado.cliente_empresa}` : ""}
                     </p>
                     <h1 className="mt-1 text-xl font-bold tracking-tight text-navy-900 sm:text-2xl">
                       {chamado.titulo}
                     </h1>
-                    <p className="mt-1 text-xs uppercase tracking-wide text-navy-900/40">
-                      {tipoLabel(chamado.tipo)}
+                    <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs uppercase tracking-wide text-navy-900/40">
+                      <span>{tipoLabel(chamado.tipo)}</span>
+                      {chamado.sistema_nome && (
+                        <>
+                          <span aria-hidden="true">·</span>
+                          <span className="normal-case text-navy-900/50">{chamado.sistema_nome}</span>
+                        </>
+                      )}
                     </p>
                   </div>
 
