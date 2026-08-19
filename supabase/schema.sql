@@ -206,3 +206,40 @@ create policy "Cliente vê os próprios anexos no storage"
     bucket_id = 'anexos-chamados'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
+
+-- =========================================================================
+-- Notificações por e-mail (Database Webhooks)
+-- =========================================================================
+-- Ainda precisa ser criado — configure em Database > Webhooks no painel do
+-- Supabase (Studio), um webhook para cada evento abaixo. As Edge Functions
+-- que recebem essas chamadas ficam em api/webhooks/novo-chamado.ts e
+-- api/webhooks/nova-mensagem.ts; elas conferem um segredo compartilhado
+-- (env var SUPABASE_WEBHOOK_SECRET, já configurada no Vercel) antes de
+-- processar, então qualquer request sem o header correto é rejeitado com
+-- 401 — só o Supabase deve conseguir chamar essas rotas.
+--
+-- Webhook 1 — novo chamado:
+--   Nome:     notificar-novo-chamado (livre)
+--   Tabela:   public.chamados
+--   Eventos:  Insert
+--   Tipo:     HTTP Request — POST
+--   URL:      https://customizasistemas.com.br/api/webhooks/novo-chamado
+--   Headers:  Content-Type: application/json
+--             Authorization: Bearer <valor de SUPABASE_WEBHOOK_SECRET>
+--
+-- Webhook 2 — nova mensagem do cliente:
+--   Nome:     notificar-nova-mensagem (livre)
+--   Tabela:   public.comentarios_chamado
+--   Eventos:  Insert
+--   Tipo:     HTTP Request — POST
+--   URL:      https://customizasistemas.com.br/api/webhooks/nova-mensagem
+--   Headers:  igual ao webhook 1
+--   (mensagens com autor_tipo = 'admin' chegam no endpoint mas são
+--   ignoradas ali mesmo — não precisa filtrar isso no webhook)
+--
+-- Variáveis de ambiente usadas pelos dois endpoints (Vercel):
+--   SUPABASE_WEBHOOK_SECRET — segredo compartilhado com o webhook (obrigatória)
+--   RESEND_API_KEY          — mesma usada por api/contato.ts (obrigatória)
+--   CHAMADOS_TO_EMAIL       — opcional; se ausente, cai em CONTACT_TO_EMAIL
+--                             e depois em customizasistemas@gmail.com
+--   CONTACT_FROM_EMAIL      — opcional; mesmo remetente do contato se ausente

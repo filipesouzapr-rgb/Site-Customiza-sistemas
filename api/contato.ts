@@ -4,6 +4,8 @@
 export const config = { runtime: "edge" };
 
 import { json } from "./_lib/http";
+import { escapeHtml } from "./_lib/escapeHtml";
+import { sendEmail } from "./_lib/resend";
 
 interface ContactPayload {
   name: string;
@@ -34,15 +36,6 @@ function isValidPayload(body: unknown): body is ContactPayload {
   );
 }
 
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
 export default async function handler(request: Request): Promise<Response> {
   if (request.method !== "POST") {
     return json({ ok: false, error: "Método não permitido." }, 405);
@@ -59,13 +52,6 @@ export default async function handler(request: Request): Promise<Response> {
     return json({ ok: false, error: "Dados inválidos." }, 400);
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.error("RESEND_API_KEY não configurada.");
-    return json({ ok: false, error: "Configuração do servidor incompleta." }, 500);
-  }
-
-  const fromAddress = process.env.CONTACT_FROM_EMAIL || "Customiza Sistemas <contato@customizasistemas.com.br>";
   const toAddress = process.env.CONTACT_TO_EMAIL || "customizasistemas@gmail.com";
 
   const html = `
@@ -80,23 +66,15 @@ export default async function handler(request: Request): Promise<Response> {
   `;
 
   try {
-    const resendResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: fromAddress,
-        to: [toAddress],
-        reply_to: body.email,
-        subject: `Novo orçamento — ${body.name}${body.company ? ` (${body.company})` : ""}`,
-        html,
-      }),
+    const result = await sendEmail({
+      to: toAddress,
+      replyTo: body.email,
+      subject: `Novo orçamento — ${body.name}${body.company ? ` (${body.company})` : ""}`,
+      html,
     });
 
-    if (!resendResponse.ok) {
-      console.error("Falha ao enviar via Resend:", resendResponse.status, await resendResponse.text());
+    if (!result.ok) {
+      console.error("Falha ao enviar via Resend:", result.error);
       return json({ ok: false, error: "Falha ao enviar e-mail." }, 502);
     }
 
