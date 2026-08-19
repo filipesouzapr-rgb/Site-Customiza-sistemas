@@ -208,37 +208,107 @@ create policy "Cliente vê os próprios anexos no storage"
   );
 
 -- =========================================================================
--- Notificações por e-mail (Database Webhooks)
+-- Notificações por e-mail (gatilhos via pg_net)
 -- =========================================================================
--- Ainda precisa ser criado — configure em Database > Webhooks no painel do
--- Supabase (Studio), um webhook para cada evento abaixo. As Edge Functions
--- que recebem essas chamadas ficam em api/webhooks/novo-chamado.ts e
--- api/webhooks/nova-mensagem.ts; elas conferem um segredo compartilhado
--- (env var SUPABASE_WEBHOOK_SECRET, já configurada no Vercel) antes de
--- processar, então qualquer request sem o header correto é rejeitado com
--- 401 — só o Supabase deve conseguir chamar essas rotas.
+-- Ainda precisa ser criado — rode o bloco abaixo no SQL Editor do Supabase.
+-- A UI de Database Webhooks (Studio > Database > Webhooks) não funciona
+-- neste projeto (erro "schema supabase_functions does not exist" — parece
+-- um problema de provisionamento; habilitar a extensão pg_net sozinha não
+-- resolve porque a UI de Webhooks depende também do schema
+-- supabase_functions, que é outra peça). Em vez da UI, os triggers abaixo
+-- chamam net.http_post diretamente, o que só precisa da extensão pg_net
+-- (schema `net`), sem depender de supabase_functions.
 --
--- Webhook 1 — novo chamado:
---   Nome:     notificar-novo-chamado (livre)
---   Tabela:   public.chamados
---   Eventos:  Insert
---   Tipo:     HTTP Request — POST
---   URL:      https://customizasistemas.com.br/api/webhooks/novo-chamado
---   Headers:  Content-Type: application/json
---             Authorization: Bearer <valor de SUPABASE_WEBHOOK_SECRET>
+-- As duas Edge Functions que recebem essas chamadas são
+-- api/webhooks/novo-chamado.ts e api/webhooks/nova-mensagem.ts; elas
+-- conferem o mesmo segredo compartilhado (env var SUPABASE_WEBHOOK_SECRET,
+-- já configurada no Vercel) enviado no header Authorization, então
+-- qualquer request sem o header correto é rejeitado com 401 — o payload
+-- JSON montado abaixo (type/table/schema/record/old_record) replica o
+-- formato que a UI de Webhooks nativa enviaria, então as funções não
+-- precisaram de nenhuma adaptação.
 --
--- Webhook 2 — nova mensagem do cliente:
---   Nome:     notificar-nova-mensagem (livre)
---   Tabela:   public.comentarios_chamado
---   Eventos:  Insert
---   Tipo:     HTTP Request — POST
---   URL:      https://customizasistemas.com.br/api/webhooks/nova-mensagem
---   Headers:  igual ao webhook 1
---   (mensagens com autor_tipo = 'admin' chegam no endpoint mas são
---   ignoradas ali mesmo — não precisa filtrar isso no webhook)
+-- net.http_post é assíncrono (enfileira a chamada e retorna na hora) — o
+-- INSERT do cliente não fica esperando o e-mail sair. Para depurar envios,
+-- consulte a tabela de respostas do pg_net (o nome exato varia por versão,
+-- geralmente net._http_response ou net.http_response):
+--   select * from net._http_response order by created desc limit 5;
 --
+-- Troque <SUPABASE_WEBHOOK_SECRET> pelo valor real antes de rodar.
+
+create extension if not exists pg_net with schema net;
+
+create or replace function public.notificar_novo_chamado()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, net
+as $$
+begin
+  perform net.http_post(
+    url := 'https://customizasistemas.com.br/api/webhooks/novo-chamado',
+    body := jsonb_build_object(
+      'type', 'INSERT',
+      'table', 'chamados',
+      'schema', 'public',
+      'record', to_jsonb(new),
+      'old_record', null
+    ),
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer <SUPABASE_WEBHOOK_SECRET>'
+    ),
+    timeout_milliseconds := 5000
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_notificar_novo_chamado on public.chamados;
+create trigger trg_notificar_novo_chamado
+  after insert on public.chamados
+  for each row
+  execute function public.notificar_novo_chamado();
+
+create or replace function public.notificar_nova_mensagem()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, net
+as $$
+begin
+  perform net.http_post(
+    url := 'https://customizasistemas.com.br/api/webhooks/nova-mensagem',
+    body := jsonb_build_object(
+      'type', 'INSERT',
+      'table', 'comentarios_chamado',
+      'schema', 'public',
+      'record', to_jsonb(new),
+      'old_record', null
+    ),
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'Authorization', 'Bearer <SUPABASE_WEBHOOK_SECRET>'
+    ),
+    timeout_milliseconds := 5000
+  );
+  return new;
+end;
+$$;
+
+-- Só dispara para mensagens de cliente — respostas do admin (via
+-- api/admin/responder-chamado.ts) não geram notificação. O endpoint
+-- também ignora autor_tipo='admin' por conta própria, então isso é só
+-- para evitar uma chamada HTTP desnecessária.
+drop trigger if exists trg_notificar_nova_mensagem on public.comentarios_chamado;
+create trigger trg_notificar_nova_mensagem
+  after insert on public.comentarios_chamado
+  for each row
+  when (new.autor_tipo = 'cliente')
+  execute function public.notificar_nova_mensagem();
+
 -- Variáveis de ambiente usadas pelos dois endpoints (Vercel):
---   SUPABASE_WEBHOOK_SECRET — segredo compartilhado com o webhook (obrigatória)
+--   SUPABASE_WEBHOOK_SECRET — segredo compartilhado com os triggers (obrigatória)
 --   RESEND_API_KEY          — mesma usada por api/contato.ts (obrigatória)
 --   CHAMADOS_TO_EMAIL       — opcional; se ausente, cai em CONTACT_TO_EMAIL
 --                             e depois em customizasistemas@gmail.com
