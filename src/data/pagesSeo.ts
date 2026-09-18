@@ -12,9 +12,9 @@ export interface PageSeo {
 export const pagesSeo = {
   home: {
     path: "/",
-    title: "Customiza Sistemas | Soluções sob medida para o seu negócio",
+    title: "Customiza Sistemas | PDV e gestão para o seu comércio",
     description:
-      "A Customiza Sistemas desenvolve sistemas personalizados, automações, dashboards e soluções digitais sob medida para empresas.",
+      "Sistema de PDV, fiado, conciliação de pagamento e contas a pagar sob medida para o seu comércio. Também desenvolvemos sistemas personalizados para outros negócios.",
   },
   servicos: {
     path: "/servicos",
