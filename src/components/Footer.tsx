@@ -3,6 +3,7 @@ import { Mail, MapPin } from "lucide-react";
 import { Container } from "./Container";
 import { InstagramIcon, LinkedinIcon } from "./SocialIcons";
 import { company, whatsappLink, instagramLink } from "../config/company";
+import { trackMetaPixelEvent } from "../lib/metaPixel";
 import logo from "../assets/logo.png";
 
 const navLinks = [
@@ -59,6 +60,7 @@ export function Footer() {
                     href={whatsappLink}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => trackMetaPixelEvent("Lead")}
                     className="transition-colors hover:text-cyan-accent"
                   >
                     WhatsApp

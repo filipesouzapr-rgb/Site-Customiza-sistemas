@@ -5,6 +5,7 @@ import { PageHero } from "../components/PageHero";
 import { ContactForm } from "../components/ContactForm";
 import { RevealOnScroll } from "../components/RevealOnScroll";
 import { company, whatsappLink } from "../config/company";
+import { trackMetaPixelEvent } from "../lib/metaPixel";
 import { pagesSeo } from "../data/pagesSeo";
 
 export function Contato() {
@@ -43,6 +44,7 @@ export function Contato() {
                           href={whatsappLink}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={() => trackMetaPixelEvent("Lead")}
                           className="text-sm text-navy-900/60 hover:text-blue-600"
                         >
                           Conversar agora
